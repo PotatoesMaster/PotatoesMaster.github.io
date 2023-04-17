@@ -1,0 +1,213 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My personal search engine (sort of)</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <script>
+    // Search engine list
+    const engines = {
+      // General
+      d: {
+        desc: "DuckDuckGo",
+        go: (q) => `https://duckduckgo.com/?q=${q}`
+      },
+      down: {
+        desc: "DownForEveryoneOrJustMe",
+        go: (q) => `http://www.downforeveryoneorjustme.com/${q}`
+      },
+      w: {
+        desc: "Wikipédia (Fr)",
+        go: (q) => `http://fr.wikipedia.org/w/index.php?search=${q}`
+      },
+      we: {
+        desc: "Wikipedia (En)",
+        go: (q) => `http://en.wikipedia.org/w/index.php?search=${q}`
+      },
+      books: {
+        desc: "Wikibooks (Fr)",
+        go: (q) => `http://wikibooks.org/search-redirect.php?family=wikibooks&search=${q}&language=fr`
+      },
+      ma: {
+        desc: "Metal Archives - Encyclopedia Metallum",
+        go: (q) => `https://www.metal-archives.com/search?searchString=${q}&type=band_name`
+      },
+      i: {
+        desc: "Google Image",
+        go: (q) => `http://google.fr/images?q=${q}&biw=1440&bih=900&tbm=isch`
+      },
+      gi: {
+        desc: "Google search by image",
+        go: (q) => `https://www.google.com/searchbyimage?image_url=${q}`
+      },
+      map: {
+        desc: "Google Maps",
+        go: (q) => `http://maps.google.fr/maps?hl=fr&q=${q}&um=1&ie=UTF-8&sa=N&tab=wl`
+      },
+      imdb: {
+        desc: "IMDB",
+        go: (q) => `http://www.imdb.com/find?ref_=nv_sr_fn&q=${q}&s=all`
+      },
+      y: {
+        desc: "Youtube",
+        go: (q) => `http://www.youtube.com/results?search_query=${q}`
+      },
+      ann: {
+        desc: "Anime News Network",
+        go: (q) => `http://www.animenewsnetwork.com/encyclopedia/search/name?only=anime&q=${q}`
+      },
+      archive: {
+        desc: "Internet Archive",
+        go: (q) => `https://web.archive.org/web/*/${q}`
+      },
+
+      // Language related
+      fr: {
+        desc: "WordReference.com, En → Fr",
+        go: (q) => `http://www.wordreference.com/enfr/${q}`
+      },
+      en: {
+        desc: "WordReference.com, Fr → En",
+        go: (q) => `http://www.wordreference.com/fren/${q}`
+      },
+      conj: {
+        desc: "WordReference.com, Conjugaison Fr",
+        go: (q) => `http://www.wordreference.com/conj/FRverbs.aspx?v=${q}`
+      },
+      defen: {
+        desc: "Collins English Dictionary",
+        go: (q) => `https://www.collinsdictionary.com/dictionary/english/${q}`
+      },
+      def: {
+        desc: "Wiktionnaire",
+        go: (q) => `http://fr.wiktionary.org/w/index.php?search=${q}`
+      },
+      slang: {
+        desc: "urban dictionary",
+        go: (q) => `http://www.urbandictionary.com/define.php?term=${q}`
+      },
+
+      // Tech
+      mdn: {
+        desc: "Mozilla Developer Network",
+        go: (q) => `https://developer.mozilla.org/en-US/search?q=${q}`
+      },
+      caniuse: {
+        desc: "Can I use",
+        go: (q) => `https://caniuse.com/?search=${q}`
+      },
+    };
+
+    const interpretHash = (hash) => {
+      if (!hash) {
+        return {};
+      }
+      const firstSpacePos = hash.indexOf('%20');
+      if (firstSpacePos > 0) {
+        const engineMaybe = engines[hash.substring(0, firstSpacePos)];
+        if (engineMaybe) {
+          return {
+            engine: engineMaybe,
+            query: hash.substring(firstSpacePos + 3)
+          };
+        }
+      }
+      return { engine: engines.d, query: hash };
+    }
+
+    const evaluate = ({ engine, query }) => engine?.go(query);
+
+    const tryToRedirect = () => {
+      const target = evaluate(interpretHash(window.location.hash.substring(1)));
+      if (target) {
+        window.location.replace(target);
+      }
+    };
+
+    tryToRedirect();
+
+    window.addEventListener('hashchange', () => {
+      tryToRedirect();
+    });
+  </script>
+
+  <h1>My personal search engine (sort of)</h1>
+
+  <h2>The idea</h2>
+  <p>
+    A simple page usable as a search engine in Firefox for Android.
+  </p>
+  <p>
+    The search query is added to the url as a hash (AKA fragment identifier), thus not visible to the backend (I do not
+    want github http log to contain my search history).<br>
+  </p>
+  <p>
+    An example of search ("plop" in the default search engine, DucDuckGo): <a
+      href="#plop">https://potatoesmaster.github.io/search#plop</a>
+  </p>
+  <p>
+    The query is interpreted as follow:
+  <ul>
+    <li>
+      If the first word is one of the supported search engine alias, redirect to this search engine (à la DuckDuckGo
+      !bang).
+    </li>
+    <li>
+      Else redirect to DuckDuckGo.
+    </li>
+  </ul>
+  </p>
+
+  <h2>List of keywords and associated search engine</h2>
+  <table id="keyword-table">
+    <tr>
+      <th>Keyword</th>
+      <th>Associated search engine</th>
+    </tr>
+  </table>
+  <script>
+    const keywordTable = document.querySelector('#keyword-table');
+    keywordTable.append(
+      ...Object.entries(engines).map(([k, { desc }]) => {
+        const td1 = document.createElement("td");
+        td1.appendChild(document.createTextNode(k));
+        const td2 = document.createElement("td");
+        td2.appendChild(document.createTextNode(desc));
+        const tr = document.createElement("tr");
+        tr.append(td1, td2);
+        return tr;
+      })
+    );
+  </script>
+
+  <h2>Adding as a search engine in Firefo on Android</h2>
+
+  <ol>
+    <li>
+      Focus the search bar.
+    </li>
+    <li>
+      In the dropdown menu (accessible via the search engine icon), select "⚙ Settings".
+    </li>
+    <li>
+      Select "➕ Add a new search engine".
+    </li>
+    <li>
+      Select "other". In the fields at bottom, enter a name (whatever you want), and a search query :
+      <code>
+        https://potatoesmaster.github.io/search#%s
+      </code>
+    </li>
+  </ol>
+
+  <h2>And lastly,</h2>
+
+  <p>Feel free to copypaste. ;)</p>
+</body>
+
+</html>
